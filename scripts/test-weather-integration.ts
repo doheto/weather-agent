@@ -30,7 +30,7 @@ async function testWeatherIntegration(): Promise<void> {
 
     // Test locations
     const testLocations = [
-      'San Francisco',
+      'San-Francisco',
       'London',
       'Tokyo',
     ];
