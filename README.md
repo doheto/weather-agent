@@ -1,6 +1,9 @@
 # Weather Agent
 
-A natural language weather agent built with hexagonal architecture that understands and responds to weather-related questions using live data from **OpenWeatherMap API 3.0**.
+A **natural language weather agent** built with hexagonal architecture that understands and responds to weather-related questions using **OpenAI GPT** and live data from **OpenWeatherMap API 3.0**.
+
+🤖 **Ask in natural language**: *"What's the weather like in Paris today?"*  
+🌤️ **Get conversational responses**: *"It's currently 22°C in Paris with partly cloudy skies..."*
 
 ## 🏗️ Architecture
 
@@ -14,14 +17,14 @@ This project implements **Hexagonal Architecture** (Ports & Adapters pattern) wi
 src/
 ├── core/               # Business logic (no dependencies)
 │   ├── entities/       # WeatherData, WeatherQuery, CalendarEvent
-│   ├── usecases/       # Business operations
-│   └── ports/          # Interfaces for external world
+│   ├── usecases/       # ProcessWeatherQueryUseCase, GetCurrentWeatherUseCase
+│   └── ports/          # IWeatherDataPort, INLPPort, ICalendarPort
 ├── adapters/           # External world implementations
 │   ├── weather/        # OpenWeatherMap API 3.0 client ✅
-│   ├── nlp/           # Natural language processing
-│   ├── calendar/      # Google Calendar integration
-│   └── web/           # REST API controllers
-└── infrastructure/    # Framework, configuration ✅
+│   ├── nlp/           # OpenAI GPT integration ✅
+│   ├── calendar/      # Google Calendar integration (upcoming)
+│   └── web/           # Express REST API ✅
+└── infrastructure/    # Service factory, configuration ✅
 ```
 
 ## 🚀 Quick Start
@@ -29,7 +32,8 @@ src/
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- OpenWeatherMap API key (free at https://openweathermap.org/api)
+- **OpenWeatherMap API key** (free at https://openweathermap.org/api)
+- **OpenAI API key** (get at https://platform.openai.com/api-keys)
 
 ### Setup
 
@@ -41,14 +45,19 @@ npm install
 2. **Set up environment variables:**
 ```bash
 # Create .env file and add:
-OPENWEATHER_API_KEY=your_api_key_here
+OPENWEATHER_API_KEY=your_weather_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional (with defaults):
 OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/3.0
 OPENWEATHER_GEO_BASE_URL=https://api.openweathermap.org/geo/1.0
+OPENAI_MODEL=gpt-3.5-turbo
 ```
 
-3. **Test the weather integration:**
+3. **Test the integrations:**
 ```bash
-npm run test:integration
+npm run test:weather    # Test weather API only
+npm run test:nlp       # Test full NLP workflow
 ```
 
 4. **Start development server:**
@@ -63,7 +72,7 @@ npm test
 
 ## 🎯 Features
 
-- [x] Hexagonal architecture foundation
+- [x] **Hexagonal architecture foundation** ✅
 - [x] **OpenWeatherMap API 3.0 integration** ✅
 - [x] **OneCall API with enhanced weather data** ✅
 - [x] **Current weather by location name or coordinates** ✅
@@ -71,24 +80,39 @@ npm test
 - [x] **UV Index and enhanced meteorological data** ✅
 - [x] **Location geocoding and search** ✅
 - [x] **Weather overview with human-readable summaries** ✅
+- [x] **Natural language query processing (OpenAI GPT)** ✅
+- [x] **Intent extraction and validation** ✅
+- [x] **Conversational AI responses** ✅
+- [x] **REST API endpoints** ✅
 - [x] **Comprehensive error handling** ✅
-- [ ] Natural language query processing
-- [ ] Google Calendar utilities
-- [ ] REST API endpoints
+- [ ] Google Calendar integration
 - [ ] Web interface
 
-## 🌟 OpenWeatherMap API 3.0 Benefits
+## 🤖 Natural Language Processing (OpenAI GPT)
 
-Our integration leverages the latest **API 3.0 OneCall** endpoints providing:
+Our NLP integration provides intelligent weather conversations:
 
-- **Enhanced Data**: UV index, dew point, cloud coverage, moon phases
-- **Single Call Efficiency**: Current weather + 8-day forecast in one request
-- **Higher Accuracy**: Improved weather models and forecasting
-- **Rich Metadata**: Precise timestamps, timezone information
-- **Weather Overviews**: Human-readable weather summaries
+- **Intent Extraction**: Automatically identifies location, timeframe, and weather type
+- **Query Validation**: Filters weather vs non-weather queries  
+- **Conversational Responses**: GPT-generated natural language answers
+- **Confidence Scoring**: AI confidence levels for intent accuracy
+- **Fallback Handling**: Graceful degradation when APIs are unavailable
 
-### API Endpoints Used
+### Example Interactions
+```typescript
+Query: "Will it rain tomorrow in New York?"
+Intent: { location: "New York", timeframe: "tomorrow", weatherType: "precipitation" }
+Response: "Tomorrow in New York, there's a 20% chance of light rain with temperatures around 18°C..."
+
+Query: "What's the temperature in Tokyo?"  
+Intent: { location: "Tokyo", timeframe: "now", weatherType: "temperature" }
+Response: "The current temperature in Tokyo is 27°C, feeling like 31°C with high humidity..."
 ```
+
+
+### External API Endpoints Used
+```bash
+# OpenWeatherMap API 3.0
 Current Weather + Forecast:
 https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={API_key}
 
@@ -97,99 +121,64 @@ https://api.openweathermap.org/data/3.0/onecall/overview?lat={lat}&lon={lon}&app
 
 Location Geocoding:
 https://api.openweathermap.org/geo/1.0/direct?q={city}&appid={API_key}
+
+# OpenAI API
+Chat Completions (GPT-3.5/4):
+https://api.openai.com/v1/chat/completions
+```
+
+### Weather Agent REST API
+```bash
+GET  /              # API documentation and health
+GET  /health        # Service health check
+POST /query         # Natural language weather queries  
+GET  /weather/:location  # Direct weather lookup (legacy)
 ```
 
 ## 🧪 Testing
 
 ```bash
-# Run all unit tests
+# Run all unit tests (with mocks)
 npm test
 
-# Run tests in watch mode
-npm run test:watch
+# Test real weather API integration (OpenWeatherMap only)
+npm run test:weather
 
-# Run tests with coverage
-npm run test:coverage
-
-# Test real weather API 3.0 integration
-npm run test:integration
+# Test full NLP workflow (OpenAI + OpenWeatherMap)
+npm run test:nlp
 ```
 
-**Test Coverage:** 26 tests passing across 3 test suites:
-- Core business logic (use cases)
-- Weather adapter (OpenWeatherMap API 3.0 integration)
-- Mock data transformations and edge cases
+**Test Coverage:** **33 tests passing** across **4 test suites**:
+- Core business logic (use cases) - 2 tests  
+- Weather adapter (OpenWeatherMap API 3.0) - 15 tests
+- NLP adapter (OpenAI GPT integration) - 7 tests
+- ProcessWeatherQueryUseCase (full workflow) - 9 tests
 
 ## 🔧 Development
 
 - `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run test` - Run test suite
-- `npm run test:integration` - Test with real weather API 3.0
-- `npm run lint` - Check code quality
+- `npm run build` - Build for production  
+- `npm start` - Start production server
+- `npm test` - Run all unit tests
+- `npm run test:weather` - Test weather API integration only
+- `npm run test:nlp` - Test full NLP + weather workflow
+- `npm run lint` - Check code quality with ESLint
+- `npm run lint:fix` - Auto-fix linting issues
 
-## ⚡ Current Capabilities
+### Express REST API
+```bash
+# Start the server
+npm start
 
-### Weather Data Fetching (API 3.0)
-```typescript
-import { WeatherServiceFactory } from './src/infrastructure/WeatherServiceFactory';
-import { GetCurrentWeatherUseCase } from './src/core/usecases/GetCurrentWeatherUseCase';
+# Make natural language weather queries
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Will it rain tomorrow in London?"}'
 
-// Get weather service (automatically uses API 3.0)
-const weatherService = WeatherServiceFactory.createFromEnv();
-const useCase = new GetCurrentWeatherUseCase(weatherService);
+# Direct weather lookup  
+curl http://localhost:3000/weather/Tokyo
 
-// Fetch by location name (geocoding + weather)
-const result = await useCase.execute({ location: 'San Francisco' });
-
-// Fetch by coordinates (direct OneCall API)
-const result = await useCase.execute({ 
-  latitude: 37.7749, 
-  longitude: -122.4194 
-});
+# Health check
+curl http://localhost:3000/health
 ```
 
-### Enhanced Weather Data (API 3.0)
-- **Current Conditions**: Temperature, feels-like, humidity, pressure
-- **Wind Information**: Speed, direction, gusts
-- **Visibility & UV**: Enhanced visibility data, UV index
-- **Atmospheric Data**: Dew point, cloud coverage percentage
-- **Forecasting**: 8-day daily forecasts with min/max temperatures
-- **Precipitation**: Probability and amount for rain/snow
-- **Location Data**: Precise coordinates, timezone information
-
-### Weather Overview Feature
-```typescript
-// Get human-readable weather summary (API 3.0 exclusive)
-const overview = await adapter.getWeatherOverview(37.7749, -122.4194);
-// Returns: "Today will be mostly clear with temperatures reaching 22°C..."
-```
-
-## 📁 Current Status
-
-✅ **Phase 0 Complete:** Project foundation with hexagonal architecture
-✅ **Phase 1 Complete:** Weather API 3.0 integration
-- **OpenWeatherMap API 3.0 OneCall integration**
-- **Enhanced weather data (UV index, dew point, etc.)**
-- **Efficient single-call architecture**
-- **Location geocoding with fallback handling**
-- **8-day weather forecasting**
-- **Weather overview summaries**
-- **100% test coverage for weather integration**
-- **Real API 3.0 integration testing**
-
-**Next:** Phase 2 - Natural language processing integration
-
-## 🔄 Migration from API 2.5 to 3.0
-
-This implementation uses **OpenWeatherMap API 3.0**, which provides:
-
-| Feature | API 2.5 | API 3.0 ✅ |
-|---------|---------|-----------|
-| Weather Calls | 2 calls (current + forecast) | 1 call (OneCall) |
-| UV Index | ❌ Not available | ✅ Included |
-| Weather Overview | ❌ Not available | ✅ Human-readable |
-| Forecast Length | 5 days | 8 days |
-| Data Precision | Basic | Enhanced |
-
-The hexagonal architecture makes this API upgrade seamless - core business logic remains unchanged!
