@@ -135,26 +135,8 @@ POST /query         # Natural language weather queries
 GET  /weather/:location  # Direct weather lookup (legacy)
 ```
 
-## 🧪 Testing
 
-```bash
-# Run all unit tests (with mocks)
-npm test
-
-# Test real weather API integration (OpenWeatherMap only)
-npm run test:weather
-
-# Test full NLP workflow (OpenAI + OpenWeatherMap)
-npm run test:nlp
-```
-
-**Test Coverage:** **33 tests passing** across **4 test suites**:
-- Core business logic (use cases) - 2 tests  
-- Weather adapter (OpenWeatherMap API 3.0) - 15 tests
-- NLP adapter (OpenAI GPT integration) - 7 tests
-- ProcessWeatherQueryUseCase (full workflow) - 9 tests
-
-## 🔧 Development
+## 🔧 Development & Testing
 
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build for production  
@@ -165,7 +147,7 @@ npm run test:nlp
 - `npm run lint` - Check code quality with ESLint
 - `npm run lint:fix` - Auto-fix linting issues
 
-### Express REST API
+### Test Express REST API
 ```bash
 # Start the server
 npm start
