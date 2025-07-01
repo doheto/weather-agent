@@ -5,7 +5,7 @@ export function LoginButton() {
     // Use the official BetterAuth client method
     await signIn.social({
       provider: "google",
-      callbackURL: "/dashboard" // Relative URL as per docs
+      callbackURL: "http://localhost:5173/dashboard" // Absolute URL to frontend
     });
   };
 

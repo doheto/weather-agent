@@ -14,7 +14,7 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Request calendar scope for future integration
+      // Request calendar scope for weather-calendar integration
       scope: ['email', 'profile', 'https://www.googleapis.com/auth/calendar.readonly'],
     },
   },
