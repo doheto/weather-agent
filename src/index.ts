@@ -6,6 +6,8 @@ import morgan from 'morgan';
 import { ServiceFactory } from './infrastructure/WeatherServiceFactory';
 import { ProcessWeatherQueryUseCase } from './core/usecases/ProcessWeatherQueryUseCase';
 import { GetCurrentWeatherUseCase } from './core/usecases/GetCurrentWeatherUseCase';
+import { auth } from './config/auth';
+import { toNodeHandler } from 'better-auth/node';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,8 +36,17 @@ try {
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(morgan('combined'));
+
+// Mount Better Auth BEFORE express.json() middleware
+// This is critical - Better Auth must handle requests before JSON parsing
+app.all('/api/auth/*', toNodeHandler(auth));
+
+// Apply JSON middleware only to non-auth routes
 app.use(express.json());
 
 // Health check
