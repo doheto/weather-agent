@@ -9,7 +9,7 @@ export const auth = betterAuth({
   baseURL: process.env.BASE_URL || 'http://localhost:3000',
   trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:5173'],
   
-  // Enable Google OAuth
+  // Enable Google OAuth 2.0
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
