@@ -16,15 +16,17 @@ This project implements **Hexagonal Architecture** (Ports & Adapters pattern) wi
 ```
 src/
 ├── core/               # Business logic (no dependencies)
-│   ├── entities/       # WeatherData, WeatherQuery, CalendarEvent
-│   ├── usecases/       # ProcessWeatherQueryUseCase, GetCurrentWeatherUseCase
-│   └── ports/          # IWeatherDataPort, INLPPort, ICalendarPort
+│   ├── entities/       # User, AuthSession, WeatherData, WeatherQuery, CalendarEvent
+│   ├── usecases/       # AuthenticateUserUseCase, ProcessWeatherQueryUseCase, GetCurrentWeatherUseCase
+│   └── ports/          # IAuthPort, IUserPort, IWeatherDataPort, INLPPort, ICalendarPort
 ├── adapters/           # External world implementations
-│   ├── weather/        # OpenWeatherMap API 3.0 client ✅
+│   ├── auth/          # BetterAuth integration ✅
+│   ├── weather/       # OpenWeatherMap API 3.0 client ✅
 │   ├── nlp/           # OpenAI GPT integration ✅
 │   ├── calendar/      # Google Calendar integration (upcoming)
-│   └── web/           # Express REST API ✅
-└── infrastructure/    # Service factory, configuration ✅
+│   └── repositories/  # User repository ✅
+├── infrastructure/    # Service factory, configuration ✅
+└── routes/           # Express route handlers ✅
 ```
 
 ## 🚀 Quick Start
@@ -32,8 +34,10 @@ src/
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
+- PostgreSQL database
 - **OpenWeatherMap API key** (free at https://openweathermap.org/api)
 - **OpenAI API key** (get at https://platform.openai.com/api-keys)
+- **Google OAuth credentials** (for authentication - see AUTH_IMPLEMENTATION_GUIDE.md)
 
 ### Setup
 
@@ -47,6 +51,12 @@ npm install
 # Create .env file and add:
 OPENWEATHER_API_KEY=your_weather_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Authentication
+DATABASE_URL=postgresql://user:password@localhost:5432/weather_agent
+AUTH_SECRET=your-secret-key-here
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 # Optional (with defaults):
 OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/3.0
