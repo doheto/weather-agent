@@ -7,7 +7,7 @@ export const auth = betterAuth({
   }),
   secret: process.env.AUTH_SECRET || 'your-secret-key-here',
   baseURL: process.env.BASE_URL || 'http://localhost:3000',
-  trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:5173'],
+  trustedOrigins: [process.env.FRONTEND_URL || 'http://localhost:5173' || 'https://weather-agent-henna.vercel.app '],
   
   // Enable Google OAuth 2.0
   socialProviders: {
