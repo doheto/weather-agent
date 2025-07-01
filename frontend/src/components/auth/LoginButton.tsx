@@ -5,7 +5,7 @@ export function LoginButton() {
     // Use the official BetterAuth client method
     await signIn.social({
       provider: "google",
-      callbackURL: "http://localhost:5173/dashboard" // Absolute URL to frontend
+      callbackURL: `${import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"}/dashboard`
     });
   };
 
