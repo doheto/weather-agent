@@ -1,19 +1,11 @@
-import { LoginButton } from '../components/auth/LoginButton';
+import { LoginForm } from "@/components/login-form"
 
 export function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to Weather Agent
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Get weather insights for your calendar events
-          </p>
-        </div>
-        <LoginButton />
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm md:max-w-3xl">
+        <LoginForm />
       </div>
     </div>
-  );
+  )
 } 
