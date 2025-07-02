@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './providers/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
-import { Dashboard } from './pages/Dashboard';
+import Chat from './components/Chat';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import './App.css';
 
@@ -15,7 +15,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Chat />
               </ProtectedRoute>
             }
           />
