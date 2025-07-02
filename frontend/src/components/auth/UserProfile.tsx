@@ -1,39 +1,43 @@
-import { useSession, signOut } from '../../lib/auth-client';
+import { useSession } from '../../lib/auth-client';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
 
 export function UserProfile() {
-  const { data: session, isPending } = useSession();
+  const { user, isAuthenticated, loading, signOut } = useSession();
 
-  if (isPending) return <div>Loading...</div>;
-  if (!session?.user) return null;
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  const user = session.user;
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  const typedUser = user as User;
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          window.location.href = '/';
-        }
-      }
-    });
+    await signOut();
+    window.location.href = '/';
   };
 
   return (
     <div className="flex items-center gap-4">
-      <img
-        src={user.image || '/default-avatar.png'}
-        alt={user.name}
-        className="w-10 h-10 rounded-full"
+      <img 
+        src={typedUser.picture} 
+        alt={typedUser.name} 
+        className="w-8 h-8 rounded-full"
       />
-      <div>
-        <p className="font-medium">{user.name}</p>
-        <p className="text-sm text-gray-600">{user.email}</p>
-      </div>
-      <button
+      <span>{typedUser.name}</span>
+      <button 
         onClick={handleSignOut}
-        className="text-sm text-red-600 hover:text-red-700"
+        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
       >
-        Sign out
+        Sign Out
       </button>
     </div>
   );

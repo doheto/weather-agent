@@ -1,12 +1,8 @@
-import { signIn } from '../../lib/auth-client';
+import { authClient } from '../../lib/auth-client';
 
 export function LoginButton() {
-  const handleGoogleLogin = async () => {
-    // Use the official BetterAuth client method
-    await signIn.social({
-      provider: "google",
-      callbackURL: `${import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"}/dashboard`
-    });
+  const handleGoogleLogin = () => {
+    authClient.signInWithGoogle();
   };
 
   return (
