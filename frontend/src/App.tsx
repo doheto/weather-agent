@@ -3,7 +3,7 @@ import { AuthProvider } from './providers/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import './App.css';
+// import './App.css';
 
 function App() {
   return (
