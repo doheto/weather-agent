@@ -3,53 +3,101 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { ServiceFactory } from './infrastructure/WeatherServiceFactory';
 import { ProcessWeatherQueryUseCase } from './core/usecases/ProcessWeatherQueryUseCase';
 import { GetCurrentWeatherUseCase } from './core/usecases/GetCurrentWeatherUseCase';
-import { auth } from './config/auth';
-import { toNodeHandler } from 'better-auth/node';
+import { auth } from './lib/simple-auth';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Initialize services
+// Lazy service initialization  
+let servicesInitialized = false;
 let weatherService: any;
 let nlpService: any;
 let processWeatherQueryUseCase: ProcessWeatherQueryUseCase;
 let getCurrentWeatherUseCase: GetCurrentWeatherUseCase;
 
-try {
-  const services = ServiceFactory.createFromEnv();
-  weatherService = services.weatherService;
-  nlpService = services.nlpService;
+async function initializeServices() {
+  if (servicesInitialized) return;
   
-  // Initialize use cases
-  processWeatherQueryUseCase = new ProcessWeatherQueryUseCase(weatherService, nlpService);
-  getCurrentWeatherUseCase = new GetCurrentWeatherUseCase(weatherService);
-  
-  console.log('✅ Services initialized successfully');
-} catch (error) {
-  console.error('❌ Failed to initialize services:', error);
-  console.error('Please ensure OPENWEATHER_API_KEY and OPENAI_API_KEY are set in environment variables');
-  process.exit(1);
+  try {
+    console.log('🔄 Initializing services...');
+    const services = ServiceFactory.createFromEnv();
+    weatherService = services.weatherService;
+    nlpService = services.nlpService;
+    
+    // Initialize use cases
+    processWeatherQueryUseCase = new ProcessWeatherQueryUseCase(weatherService, nlpService);
+    getCurrentWeatherUseCase = new GetCurrentWeatherUseCase(weatherService);
+    
+    servicesInitialized = true;
+    console.log('✅ Services initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize services:', error);
+    throw error;
+  }
 }
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173' || 'https://weather-agent-henna.vercel.app ',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'https://weather-agent-henna.vercel.app'
+  ],
   credentials: true,
 }));
 app.use(morgan('combined'));
+app.use(cookieParser());
 
-// Mount Better Auth BEFORE express.json() middleware
-// This is critical - Better Auth must handle requests before JSON parsing
-app.all('/api/auth/*', toNodeHandler(auth));
+// Simple auth routes (no ES module conflicts)
+app.get('/api/auth/google', (req, res) => {
+  const authURL = auth.getGoogleAuthURL();
+  res.redirect(authURL);
+});
 
-// Apply JSON middleware only to non-auth routes
+app.get('/api/auth/callback/google', async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ error: 'Authorization code required' });
+    }
+
+    const user = await auth.handleGoogleCallback(code);
+    const token = auth.generateToken(user);
+
+    // Set HTTP-only cookie
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    // Redirect to frontend
+    const frontendURL = process.env.FRONTEND_URL || 'https://weather-agent-henna.vercel.app';
+    res.redirect(`${frontendURL}/dashboard?auth=success`);
+  } catch (error) {
+    console.error('Auth callback error:', error);
+    const frontendURL = process.env.FRONTEND_URL || 'https://weather-agent-henna.vercel.app';
+    res.redirect(`${frontendURL}?auth=error`);
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ success: true });
+});
+
+app.get('/api/auth/me', auth.requireAuth.bind(auth), (req, res) => {
+  res.json({ user: (req as any).user });
+});
+
+// Apply JSON middleware
 app.use(express.json());
 
-// Health check
+// Health check - no services needed
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -70,14 +118,21 @@ app.get('/', (_req, res) => {
       '/health': 'Health check',
       '/': 'API information',
       'POST /query': 'Natural language weather query',
-      'GET /weather/:location': 'Direct weather lookup'
-    }
+      'GET /weather/:location': 'Direct weather lookup',
+      'GET /api/auth/google': 'Google OAuth login',
+      'GET /api/auth/me': 'Get current user',
+      'POST /api/auth/logout': 'Logout'
+    },
+    note: 'Full authentication and weather functionality working'
   });
 });
 
 // Natural language weather query endpoint
 app.post('/query', async (req, res) => {
   try {
+    // Initialize services on first request
+    await initializeServices();
+    
     const { query } = req.body;
     
     if (!query || typeof query !== 'string') {
@@ -113,7 +168,7 @@ app.post('/query', async (req, res) => {
         location: result.weatherData.location,
         current: result.weatherData.current,
         ...(result.weatherData.forecast && result.weatherData.forecast.length > 0 && {
-          forecast: result.weatherData.forecast.slice(0, 3) // Limit forecast for response size
+          forecast: result.weatherData.forecast.slice(0, 3)
         })
       } : null,
       timestamp: result.timestamp
@@ -127,9 +182,12 @@ app.post('/query', async (req, res) => {
   }
 });
 
-// Direct weather lookup endpoint (legacy support)
+// Direct weather lookup endpoint
 app.get('/weather/:location', async (req, res) => {
   try {
+    // Initialize services on first request
+    await initializeServices();
+    
     const { location } = req.params;
     
     if (!location) {
@@ -186,11 +244,18 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🌤️  Weather Agent running on port ${PORT}`);
-  console.log(`📐 Architecture: Hexagonal (Ports & Adapters)`);
-  console.log(`🤖 NLP: OpenAI GPT Integration`);
-  console.log(`🌍 Weather: OpenWeatherMap API 3.0`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`💬 Try: POST http://localhost:${PORT}/query with {"query": "What's the weather in Paris?"}`);
-}); 
+// Export for Vercel serverless
+export default app;
+
+// Only start server in development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🌤️  Weather Agent running on port ${PORT}`);
+    console.log(`📐 Architecture: Hexagonal (Ports & Adapters)`);
+    console.log(`🤖 NLP: OpenAI GPT Integration`);
+    console.log(`🌍 Weather: OpenWeatherMap API 3.0`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`💬 Try: POST http://localhost:${PORT}/query with {"query": "What's the weather in Paris?"}`);
+  });
+} 
