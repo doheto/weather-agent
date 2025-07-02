@@ -10,7 +10,7 @@ export interface IAuthPort {
   validateSession(token: string): Promise<AuthSession | null>;
   revokeSession(sessionId: string): Promise<void>;
   
-  // Token management
+  // Token management - TODO: move to a separate port ? later
   generateTokens(userId: string): Promise<AuthTokens>;
   refreshTokens(refreshToken: string): Promise<AuthTokens>;
 } 
