@@ -70,8 +70,8 @@ app.get('/api/auth/callback/google', async (req, res) => {
     // Set HTTP-only cookie
     res.cookie('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Required for sameSite: 'none'
+      sameSite: 'none', // Allow cross-domain cookies
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
